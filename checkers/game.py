@@ -63,9 +63,9 @@ class Game:
         if piece != 0 and piece.color == self.turn:
             self.selected = piece
             self.valid_moves = self.board.moves_options(piece)
-            return True
+            return col, row
 
-        return False
+        return False, False
 
     def _move(self, row, col):
         """
