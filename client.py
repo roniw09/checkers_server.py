@@ -22,10 +22,10 @@ def extract_reply(reply):
 
 def get_row_col_from_mouse(pos):
     """
- calc in which row and column the mouse is in
- :param pos: current mouse position (a tuple with x and y)
- :return: the row and the column
- """
+    calc in which row and column the mouse is in
+    :param pos: current mouse position (a tuple with x and y)
+    :return: the row and the column
+    """
     x, y = pos
     row = y // SQUARE_SIZE
     col = x // SQUARE_SIZE
@@ -41,7 +41,6 @@ def playing(sock, mode):
     play = True
     game = Game(WIN)
     pygame.display.update()
-    clock = pygame.time.Clock()
 
     turn = None
     if mode == 'RED':
@@ -109,11 +108,11 @@ def playing(sock, mode):
 
 def display_img(screen, img):
     """
- display an image onto screen
- :param screen: the screen
- :param img: the image path
- :return: image itself
- """
+    display an image onto screen
+    :param screen: the screen
+    :param img: the image path
+    :return: image itself
+    """
     to_show = pygame.image.load(img)
     screen.blit(to_show, (0, 0))
     pygame.display.flip()
@@ -122,9 +121,9 @@ def display_img(screen, img):
 
 def main():
     """
- main loop
- :return: void
- """
+    main loop
+    :return: void
+    """
     client_socket = socket.socket()
     try:
         client_socket.connect(('192.168.0.195', 4001))
