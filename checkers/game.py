@@ -6,27 +6,35 @@ from .board import Board
 class Game:
     def __init__(self, screen):
         """
-        initiates game
-        :param screen: the screen
-        """
+       initiates game
+       :param screen: the screen
+       """
         self._init()
         self.screen = screen
 
     def update(self):
         """
-        update the game according to recnt actions
-        :return: void
-        """
+       update the game according to recnt actions
+       :return: void
+       """
         self.board.draw(self.screen)
         row, col = self.draw_valid_moves(self.valid_moves)
         pygame.display.update()
         return row, col
 
+    def op_update(self, x, y):
+        """
+       update the game according to recnt actions
+       :return: void
+       """
+        self.board.draw(self.screen)
+        row, col = self.draw_valid_moves(x, y)
+
     def _init(self):
         """
-        initiates the game params
-        :return: void
-        """
+       initiates the game params
+       :return: void
+       """
         self.selected = None
         self.board = Board()
         self.turn = RED
@@ -34,27 +42,28 @@ class Game:
 
     def winner(self):
         """
-        return who won
-        :return: the winner's color
-        """
+       return who won
+       :return: the winner's color
+       """
         return self.board.winner()
 
     def reset(self):
         """
-        resets game
-        :return: void
-        """
+       resets game
+       :return: void
+       """
         self._init()
 
     def select(self, row, col):
         """
-        checks if the piece selected can be moved
-        :param row: the row the piece is in
-        :param col: the column the piece is in
-        :return:
-        """
+       checks if the piece selected can be moved
+       :param row: the row the piece is in
+       :param col: the column the piece is in
+       :return:
+       """
+        end_xy = (0, 0)
         if self.selected:
-            result = self._move(row, col)
+            result, end_xy = self._move(row, col)
             if not result:
                 self.selected = None
                 self.select(row, col)
@@ -63,17 +72,18 @@ class Game:
         if piece != 0 and piece.color == self.turn:
             self.selected = piece
             self.valid_moves = self.board.moves_options(piece)
-            return True
+            return True, end_xy
 
-        return False
+        return False, end_xy
 
     def _move(self, row, col):
         """
-        moves a piece
-        :param row: the row you want to move the piece to
-        :param col: the column you want to move the piece to
-        :return: true if can be moved, false if not
-        """
+       moves a piece
+       :param row: the row you want to move the piece to
+       :param col: the column you want to move the piece to
+       :return: true if can be moved, false if not
+       """
+        where_to = (0, 0)
         piece = self.board.get_piece(row, col)
         if self.selected and piece == 0 and (row, col) in self.valid_moves:
             self.board.move(self.selected, row, col)
@@ -81,17 +91,17 @@ class Game:
             if skipped:
                 self.board.remove(skipped)
             self.change_turn()
-        else:
-            return False
+            where_to = (row, col)
+            return True, where_to
 
-        return True
+        return False, where_to
 
     def draw_valid_moves(self, moves):
         """
-        draws the moves a player can do with the piece its on
-        :param moves: the table that says where player can move
-        :return: void
-        """
+       draws the moves a player can do with the piece its on
+       :param moves: the table that says where player can move
+       :return: void
+       """
         row, col = 0, 0
         for move in moves:
             row, col = move
@@ -101,9 +111,9 @@ class Game:
 
     def change_turn(self):
         """
-        switches turns
-        :return:
-        """
+       switches turns
+       :return:
+       """
         self.valid_moves = {}
         if self.turn == RED:
             self.turn = WHITE
