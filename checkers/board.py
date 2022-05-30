@@ -95,9 +95,9 @@ class Board:
         return who wins
         :return: the color that won
         """
-        if self.red_pieces_left <= 0 or self.white_queens == 1:
+        if self.white_queens == 1:
             return WHITE
-        elif self.white_pieces_left <= 0 or self.red_queens == 1:
+        elif self.red_queens == 1:
             return RED
         
         return None 

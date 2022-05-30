@@ -1,10 +1,14 @@
 import socket, pygame
+import threading
+
 from by_size import *
 from checkers.constants import *
 from checkers.game import Game
 
 FPS = 60
 OPEN_PIC = 'assets\Checkers entry.png'
+RED_WON = 'assest\red won.png'
+WHITE_WON = 'assest\white won.png'
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Checkers')
 DIVIDER = '~'
@@ -53,7 +57,10 @@ def playing(sock, mode):
         row_col = []
         if game.winner() is not None:
             print(game.winner())
-            return game.winner()
+            if game.winner() == WHITE:
+                return 'WINR' + DIVIDER + 'WHITE'
+            elif game.winner() == RED:
+                return 'WINR' + DIVIDER + 'RED'
 
         while turn:
             for event in pygame.event.get():
@@ -126,12 +133,12 @@ def main():
     """
     client_socket = socket.socket()
     try:
-        client_socket.connect(('192.168.0.195', 4001))
+        client_socket.connect(('127.0.0.1', 4001))
         print("Connected!")
-        opening = display_img(WIN, OPEN_PIC)
         run = True
         result = ''
         while run:
+            img = display_img(WIN, OPEN_PIC)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or result == 'EXIT':
                     send_with_size(client_socket, 'EXIT')
@@ -145,8 +152,21 @@ def main():
                         response = recv_by_size(client_socket)
                         is_game = extract_reply(response)
                     if is_game[0] == 'COLR':
-                        opening.fill(TRANSPARENT)
+                        img.fill(TRANSPARENT)
                         result = playing(client_socket, is_game[1])
+                        send_with_size(client_socket, result)
+                        data = recv_by_size(client_socket)
+                        if data == '':
+                            break
+                        else:
+                            fields = data.split(DIVIDER)
+                            if fields[1] == 'RED':
+                                img.fill(TRANSPARENT)
+                                img = display_img(WIN, RED_WON)
+                            elif fields[1] == 'WHITE':
+                                img.fill(TRANSPARENT)
+                                img = display_img(WIN, WHITE_WON)
+            img.fill(TRANSPARENT)
 
     except Exception as E:
         print(f'cant connect bc: {E}')
