@@ -40,7 +40,7 @@ class Board:
         piece.move(row, col)
 
         if row == ROWS - 1 or row == 0:
-            piece.make_king()
+            piece.make_queen()
             if piece.color == WHITE:
                 self.white_queens += 1
             else:
@@ -95,9 +95,9 @@ class Board:
         return who wins
         :return: the color that won
         """
-        if self.red_pieces_left <= 0 or self.white_queens == 1:
+        if self.white_queens == 1:
             return WHITE
-        elif self.white_pieces_left <= 0 or self.red_queens == 1:
+        elif self.red_queens == 1:
             return RED
         
         return None 
@@ -113,10 +113,10 @@ class Board:
         right = piece.col + 1
         row = piece.row
 
-        if piece.color == RED or piece.king:
+        if piece.color == RED or piece.queen:
             moves.update(self._traverse_left(row -1, max(row-3, -1), -1, piece.color, left))
             moves.update(self._traverse_right(row -1, max(row-3, -1), -1, piece.color, right))
-        if piece.color == WHITE or piece.king:
+        if piece.color == WHITE or piece.queen:
             moves.update(self._traverse_left(row +1, min(row+3, ROWS), 1, piece.color, left))
             moves.update(self._traverse_right(row +1, min(row+3, ROWS), 1, piece.color, right))
     

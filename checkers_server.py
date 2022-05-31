@@ -1,7 +1,6 @@
 import socket, threading
 from by_size import *
 
-
 players = []
 sockets = []
 all_to_die = False
@@ -34,17 +33,19 @@ def reply_by_code(fields, sock, id):
                     op_id = i + 1
                     break
         if first:
-            result = white_player(sock, id, opponent, op_id)
-            send_with_size(red_player, 'COLR' + DIVIDER + 'WHITE')
+            send_with_size(sock, 'COLR' + DIVIDER + 'WHITE')
+            white_player(sock, id, opponent, op_id)
         else:
-            send_with_size(red_player, 'COLR' + DIVIDER + 'RED')
-            result = red_player(sock, id, opponent, op_id)
             first = True
-        return result
+            send_with_size(sock, 'COLR' + DIVIDER + 'RED')
+            red_player(sock, id, opponent, op_id)
+        return 'OOKK'
     if code == 'WAIT':
         return 'WAIT'
     if code == 'EXIT':
         return 'EXIT'
+    if code == 'WINR':
+        return 'ENDG' + DIVIDER + fields[1]
     if code == 'MOVE':
         return 'OMOV' + DIVIDER + fields[1] + DIVIDER + fields[2] + DIVIDER + fields[3] + DIVIDER + fields[4]
 
@@ -60,69 +61,71 @@ def white_player(sock, id, opponent, op_id):
     """
     global red_turn, no_winner
     while no_winner:
-        while not red_turn:
-            white_data = recv_by_size(sock)
-            if white_data == b'':
-                return 'EXIT'
+        print("current red turn: " + str(red_turn))
+        white_data = recv_by_size(sock)
+        print("recieved")
+        if white_data == b'':
+            return 'EXIT'
+        if 'OVER' in white_data:
+            return
+        if not red_turn:
             while white_data == '':
+                print("in")
                 white_data = recv_by_size(sock)
+
             fields = white_data.split(DIVIDER)
+            print("white " + fields[0])
+            if fields[0] == 'OVER':
+                return
             reply = reply_by_code(fields, sock, id)
+            print(reply)
             if reply == 'EXIT':
                 return reply
-            if reply == 'RWIN':
-                return 'RWIN'
-            if reply == 'MOVE' or reply == 'ATTE':
-                send_with_size(opponent, reply)
-                send_with_size(sock, 'NOTU')
-                red_turn = True
-        while red_turn:
-            white_data = recv_by_size(sock, id)
-            if white_data == b'':
-                return 'EXIT'
-            fields = white_data.split(DIVIDER)
-            reply = reply_by_code(fields, sock, id)
-            if reply == 'EXIT':
-                return 'EXIT'
-            send_with_size(sock, reply)
+            print("entered")
+            red_turn = True
+            send_with_size(opponent, reply)
+            send_with_size(sock, 'NOTU')
+            print("sent w")
+            print("current red turn: " + str(red_turn))
 
 
 def red_player(sock, id, opponent, op_id):
     """
     red player loop
-    :param sock: red player socket
-    :param id: red player socket id
-    :param opponent: white player socket
-    :param op_id: white player socket id
+    :param sock: white player socket
+    :param id: white player socket id
+    :param opponent: red player socket
+    :param op_id: red player socket id
     :return:
     """
     global red_turn, no_winner
     while no_winner:
-        while red_turn:
-            red_data = recv_by_size(sock)
-            if red_data == b'':
-                return 'EXIT'
+        print("current red turn: " + str(red_turn))
+        red_data = recv_by_size(sock)
+        print("recieved")
+        if red_data == b'':
+            return 'EXIT'
+        if 'OVER' in red_data:
+            return
+        if not red_turn:
             while red_data == '':
+                print("in")
                 red_data = recv_by_size(sock)
+
             fields = red_data.split(DIVIDER)
+            print("red " + fields[0])
+            if fields[0] == 'OVER':
+                return
             reply = reply_by_code(fields, sock, id)
+            print(reply)
             if reply == 'EXIT':
                 return reply
-            if reply == 'RWIN':
-                return 'RWIN'
-            if reply == 'OMOV':
-                send_with_size(opponent, reply)
-                send_with_size(sock, 'NOTU')
-                red_turn = False
-        while not red_turn:
-            red_data = recv_by_size(sock, id)
-            if red_data == b'':
-                return 'EXIT'
-            fields = red_data.split(DIVIDER)
-            reply = reply_by_code(fields, sock, id)
-            if reply == 'EXIT':
-                return 'EXIT'
-            send_with_size(sock, reply)
+            print("entered")
+            red_turn = True
+            send_with_size(opponent, reply)
+            send_with_size(sock, 'NOTU')
+            print("sent w")
+            print("current red turn: " + str(red_turn))
 
 
 def handle_client(client, id, addr):
@@ -140,15 +143,13 @@ def handle_client(client, id, addr):
             print('client disconnected')
             return
         fields = data.split(DIVIDER)
-        response = reply_by_code(fields, client,id)
+        response = reply_by_code(fields, client, id)
         if response == 'EXIT':
             print('client disconnected')
             return
         if response == 'PLAY':
             return
         send_with_size(client, response)
-
-    pass
 
 
 def main():
@@ -158,12 +159,12 @@ def main():
     """
     global players, all_to_die, play
     srv_sock = socket.socket()
-    srv_sock.bind(('0.0.0.0', 4001)) #192.168.5.249
+    srv_sock.bind(('0.0.0.0', 4001))  # 192.168.5.249
 
     srv_sock.listen(2)
     i = 1
+    print('\nMain thread: before accepting ...')
     while True:
-        print('\nMain thread: before accepting ...')
         cli_sock, addr = srv_sock.accept()
         sockets.append(cli_sock)
         print(sockets)
