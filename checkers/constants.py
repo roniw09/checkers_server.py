@@ -24,3 +24,10 @@ BLUE = (0, 0, 255)
 GREY = (128, 128, 128)
 CREAM = (237, 219, 183)
 TRANSPARENT = (0, 0, 0, 0)
+
+pygame.display.set_caption('Show Text')
+
+pygame.font.init()
+font = pygame.font.Font('assets\RobotoSlab-ExtraBold.ttf', 32)
+red_text = font.render('RED PLAYER', True, RED)
+white_text = font.render('WHITE PLAYER', True, GREY)

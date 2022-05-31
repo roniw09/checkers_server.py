@@ -6,7 +6,6 @@ sockets = []
 all_to_die = False
 first = False
 red_turn = True
-white_turn = False
 no_winner = True
 DIVIDER = '~'
 
@@ -39,6 +38,8 @@ def reply_by_code(fields, sock, id):
             first = True
             send_with_size(sock, 'COLR' + DIVIDER + 'RED')
             red_player(sock, id, opponent, op_id)
+        players[id - 1][1] = False
+        players[op_id - 1][1] = False
         return 'OOKK'
     if code == 'WAIT':
         return 'WAIT'
@@ -48,6 +49,7 @@ def reply_by_code(fields, sock, id):
         return 'ENDG' + DIVIDER + fields[1]
     if code == 'MOVE':
         return 'OMOV' + DIVIDER + fields[1] + DIVIDER + fields[2] + DIVIDER + fields[3] + DIVIDER + fields[4]
+    return 'No action'
 
 
 def white_player(sock, id, opponent, op_id):
@@ -70,7 +72,6 @@ def white_player(sock, id, opponent, op_id):
             return
         if not red_turn:
             while white_data == '':
-                print("in")
                 white_data = recv_by_size(sock)
 
             fields = white_data.split(DIVIDER)
@@ -81,12 +82,10 @@ def white_player(sock, id, opponent, op_id):
             print(reply)
             if reply == 'EXIT':
                 return reply
-            print("entered")
             red_turn = True
             send_with_size(opponent, reply)
             send_with_size(sock, 'NOTU')
             print("sent w")
-            print("current red turn: " + str(red_turn))
 
 
 def red_player(sock, id, opponent, op_id):
@@ -107,9 +106,8 @@ def red_player(sock, id, opponent, op_id):
             return 'EXIT'
         if 'OVER' in red_data:
             return
-        if not red_turn:
+        if red_turn:
             while red_data == '':
-                print("in")
                 red_data = recv_by_size(sock)
 
             fields = red_data.split(DIVIDER)
@@ -117,15 +115,12 @@ def red_player(sock, id, opponent, op_id):
             if fields[0] == 'OVER':
                 return
             reply = reply_by_code(fields, sock, id)
-            print(reply)
             if reply == 'EXIT':
                 return reply
-            print("entered")
-            red_turn = True
+            red_turn = False
             send_with_size(opponent, reply)
             send_with_size(sock, 'NOTU')
             print("sent w")
-            print("current red turn: " + str(red_turn))
 
 
 def handle_client(client, id, addr):
@@ -137,7 +132,7 @@ def handle_client(client, id, addr):
     :return:
     """
     print(f'connected client number {id}')
-    if not all_to_die:
+    while not all_to_die:
         data = recv_by_size(client)
         if data == b'':
             print('client disconnected')
@@ -147,9 +142,9 @@ def handle_client(client, id, addr):
         if response == 'EXIT':
             print('client disconnected')
             return
-        if response == 'PLAY':
-            return
         send_with_size(client, response)
+
+    client.close()
 
 
 def main():
@@ -175,6 +170,8 @@ def main():
         if i > 3:  # for tests change it to 4
             print('\nMain thread: going down for maintenance')
             break
+
+    all_to_die = True
 
     if all_to_die:
         for t in players:

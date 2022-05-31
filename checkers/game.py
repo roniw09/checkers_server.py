@@ -22,14 +22,6 @@ class Game:
        pygame.display.update()
        return row, col
 
-   def op_update(self, x, y):
-       """
-       update the game according to recnt actions
-       :return: void
-       """
-       self.board.draw(self.screen)
-       row, col = self.draw_valid_moves(x, y)
-
    def _init(self):
        """
        initiates the game params
