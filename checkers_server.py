@@ -8,6 +8,7 @@ first = False
 red_turn = True
 no_winner = True
 DIVIDER = '~'
+IP_PORT = ('0.0.0.0', 4001)
 
 
 def reply_by_code(fields, sock, id):
@@ -33,20 +34,23 @@ def reply_by_code(fields, sock, id):
                     break
         if first:
             send_with_size(sock, 'COLR' + DIVIDER + 'WHITE')
-            white_player(sock, id, opponent, op_id)
+            result = white_player(sock, id, opponent, op_id)
         else:
             first = True
             send_with_size(sock, 'COLR' + DIVIDER + 'RED')
-            red_player(sock, id, opponent, op_id)
+            result = red_player(sock, id, opponent, op_id)
         players[id - 1][1] = False
         players[op_id - 1][1] = False
+        first = False
+        if result == 'EXIT':
+            return 'EXIT'
+        if result == 'ERR1':
+            return 'ERR1'
         return 'OOKK'
     if code == 'WAIT':
         return 'WAIT'
     if code == 'EXIT':
         return 'EXIT'
-    if code == 'WINR':
-        return 'ENDG' + DIVIDER + fields[1]
     if code == 'MOVE':
         return 'OMOV' + DIVIDER + fields[1] + DIVIDER + fields[2] + DIVIDER + fields[3] + DIVIDER + fields[4]
     return 'No action'
@@ -69,6 +73,7 @@ def white_player(sock, id, opponent, op_id):
         if white_data == b'':
             return 'EXIT'
         if 'OVER' in white_data:
+            red_turn = True
             return
         if not red_turn:
             while white_data == '':
@@ -81,6 +86,7 @@ def white_player(sock, id, opponent, op_id):
             reply = reply_by_code(fields, sock, id)
             print(reply)
             if reply == 'EXIT':
+                send_with_size(opponent, 'OPLT')
                 return reply
             red_turn = True
             send_with_size(opponent, reply)
@@ -113,9 +119,12 @@ def red_player(sock, id, opponent, op_id):
             fields = red_data.split(DIVIDER)
             print("red " + fields[0])
             if fields[0] == 'OVER':
+                red_turn = True
                 return
             reply = reply_by_code(fields, sock, id)
+            print("before exit check")
             if reply == 'EXIT':
+                send_with_size(opponent, 'OPLT')
                 return reply
             red_turn = False
             send_with_size(opponent, reply)
@@ -124,6 +133,7 @@ def red_player(sock, id, opponent, op_id):
 
 
 def handle_client(client, id, addr):
+    global all_to_die
     """
     handle a client
     :param client: client socket
@@ -139,6 +149,9 @@ def handle_client(client, id, addr):
             return
         fields = data.split(DIVIDER)
         response = reply_by_code(fields, client, id)
+        if response == 'ERR1':
+            print('error: cant do move')
+            return
         if response == 'EXIT':
             print('client disconnected')
             return
@@ -154,9 +167,9 @@ def main():
     """
     global players, all_to_die, play
     srv_sock = socket.socket()
-    srv_sock.bind(('0.0.0.0', 4001))  # 192.168.5.249
+    srv_sock.bind(IP_PORT)
 
-    srv_sock.listen(2)
+    srv_sock.listen(7)
     i = 1
     print('\nMain thread: before accepting ...')
     while True:
@@ -167,7 +180,7 @@ def main():
         t.start()
         i += 1
         players.append([t, False])
-        if i > 3:  # for tests change it to 4
+        if i > 7:
             print('\nMain thread: going down for maintenance')
             break
 

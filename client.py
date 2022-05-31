@@ -10,6 +10,7 @@ WHITE_WON = 'assets\win white.png'
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Checkers')
 DIVIDER = '~'
+IP_PORT = ('127.0.0.1', 4001)
 
 
 def extract_reply(reply):
@@ -80,6 +81,7 @@ def playing(sock, mode):
                     row_col.append(row)
                     row_col.append(col)
                     status, end_xy = game.select(row, col)
+                    print("here")
                     if end_xy != (0, 0):
                         print("!!!!!!!!!!!!!!ENTER")
                         end_row, end_col = end_xy
@@ -109,6 +111,8 @@ def playing(sock, mode):
                     return 'EXIT'
             data = recv_by_size(sock)
             fields = data.split(DIVIDER)
+            if fields[0] == 'OPLT':
+                return 'OPLT'
             if fields[0] == 'OMOV':
                 start_x, start_y = int(fields[1]), int(fields[2])
                 end_x, end_y = int(fields[3]), int(fields[4])
@@ -139,12 +143,12 @@ def main():
    """
     client_socket = socket.socket()
     try:
-        client_socket.connect(('127.0.0.1', 4001))
+        client_socket.connect(IP_PORT)
         print("Connected!")
-        pic = display_img(WIN, OPEN_PIC)
         run = True
         result = ''
         while run:
+            pic = display_img(WIN, OPEN_PIC)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or result == 'EXIT':
                     send_with_size(client_socket, 'EXIT')
@@ -167,10 +171,16 @@ def main():
                                 pic = display_img(WIN, RED_WON)
                             if result == 'WHITE':
                                 pic = display_img(WIN, WHITE_WON)
+                            if result == 'EXIT':
+                                WIN.fill(TRANSPARENT)
+                                send_with_size(client_socket, 'EXIT')
+                                run = False
+                                break
                             send_with_size(client_socket, 'OVER')
                             data = recv_by_size(client_socket)
                             if data != 'OOKK':
                                 run = False
+                                print("ERRO")
                                 break
                             for event in pygame.event.get():
                                 if event == pygame.QUIT:
@@ -180,9 +190,8 @@ def main():
                                 if event == pygame.MOUSEBUTTONDOWN:
                                     x, y = pygame.mouse.get_pos()
                                     if 318 < x < 485 and 454 < y < 513:
-                                        break
-                                pic.fill(TRANSPARENT)
-
+                                        WIN.fill(TRANSPARENT)
+        client_socket.close()
     except Exception as E:
         print(f'cant connect bc: {E}')
         return
