@@ -3,7 +3,6 @@ from by_size import *
 from checkers.constants import *
 from checkers.game import Game
 
-FPS = 60
 OPEN_PIC = 'assets\Checkers entry.png'
 RED_WON = 'assets\win red.png'
 WHITE_WON = 'assets\win white.png'
