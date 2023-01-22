@@ -9,7 +9,6 @@ red_turn = True
 white_turn = False
 no_winner = True
 DIVIDER = '~'
-lock = threading.Lock()
 
 
 def reply_by_code(fields, sock, id):
@@ -33,7 +32,6 @@ def reply_by_code(fields, sock, id):
                     opponent = sockets[i]
                     op_id = i + 1
                     break
-        lock.acquire()
         if first:
             send_with_size(sock, 'COLR' + DIVIDER + 'WHITE')
             white_player(sock, id, opponent, op_id)
@@ -41,8 +39,7 @@ def reply_by_code(fields, sock, id):
             first = True
             send_with_size(sock, 'COLR' + DIVIDER + 'RED')
             red_player(sock, id, opponent, op_id)
-        lock.release()
-        return 'OVER'
+        return 'OOKK'
     if code == 'WAIT':
         return 'WAIT'
     if code == 'EXIT':
@@ -51,6 +48,7 @@ def reply_by_code(fields, sock, id):
         return 'ENDG' + DIVIDER + fields[1]
     if code == 'MOVE':
         return 'OMOV' + DIVIDER + fields[1] + DIVIDER + fields[2] + DIVIDER + fields[3] + DIVIDER + fields[4]
+    return 'No action'
 
 
 def white_player(sock, id, opponent, op_id):
@@ -69,6 +67,8 @@ def white_player(sock, id, opponent, op_id):
         print("recieved")
         if white_data == b'':
             return 'EXIT'
+        if 'OVER' in white_data:
+            return
         if not red_turn:
             while white_data == '':
                 print("in")
@@ -76,15 +76,12 @@ def white_player(sock, id, opponent, op_id):
 
             fields = white_data.split(DIVIDER)
             print("white " + fields[0])
+            if fields[0] == 'OVER':
+                return
             reply = reply_by_code(fields, sock, id)
             print(reply)
             if reply == 'EXIT':
                 return reply
-            if 'ENDG' in reply:
-                send_with_size(reply, opponent)
-                send_with_size(reply, sock)
-                no_winner = True
-                return
             print("entered")
             red_turn = True
             send_with_size(opponent, reply)
@@ -96,37 +93,36 @@ def white_player(sock, id, opponent, op_id):
 def red_player(sock, id, opponent, op_id):
     """
     red player loop
-    :param sock: red player socket
-    :param id: red player socket id
-    :param opponent: white player socket
-    :param op_id: white player socket id
+    :param sock: white player socket
+    :param id: white player socket id
+    :param opponent: red player socket
+    :param op_id: red player socket id
     :return:
     """
     global red_turn, no_winner
     while no_winner:
         print("current red turn: " + str(red_turn))
-        white_data = recv_by_size(sock)
+        red_data = recv_by_size(sock)
         print("recieved")
-        if white_data == b'':
+        if red_data == b'':
             return 'EXIT'
-        if red_turn:
-            while white_data == '':
+        if 'OVER' in red_data:
+            return
+        if not red_turn:
+            while red_data == '':
                 print("in")
-                white_data = recv_by_size(sock)
+                red_data = recv_by_size(sock)
 
-            fields = white_data.split(DIVIDER)
-            print("white " + fields[0])
+            fields = red_data.split(DIVIDER)
+            print("red " + fields[0])
+            if fields[0] == 'OVER':
+                return
             reply = reply_by_code(fields, sock, id)
             print(reply)
             if reply == 'EXIT':
                 return reply
-            if 'ENDG' in reply:
-                send_with_size(reply, opponent)
-                send_with_size(reply, sock)
-                no_winner = True
-                return
             print("entered")
-            red_turn = False
+            red_turn = True
             send_with_size(opponent, reply)
             send_with_size(sock, 'NOTU')
             print("sent w")
